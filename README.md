@@ -28,7 +28,7 @@ Per quanto riguarda i nodi kubernetes, una VM ospita il nodo master e l’altra 
 * **worker** (`192.168.43.11`)
 
 
-INSERISCI IMMAGINE
+![Figura 1 – Architettura del cluster Kubernetes](img/cluster-architettura.jpg)
 
 ---
 
@@ -380,7 +380,7 @@ When does a heart attack occur?
 
 Il servizio ha risposto restituendo il documento biomedicale più simile semanticamente, dimostrando il corretto funzionamento sia della pipeline RAG che della distribuzione Kubernetes.
 
-METTI IMMAGINI RISPOSTA2
+![Figura 2 – Risposta del RAG biomedicale all'interfaccia web](img/risposta-interfaccia.png)
 
 ---
 
