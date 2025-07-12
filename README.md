@@ -1,14 +1,14 @@
-# Accesso a un sistema RAG biomedicale tramite Kubernetes
+# Accesso a un RAG tramite un servizio Kubernetes
 
 ## Descrizione del progetto
 
-Questo progetto consiste nell’esposizione di un sistema **RAG (Retrieval-Augmented Generation)** biomedicale all’interno di un cluster Kubernetes, rendendolo accessibile tramite un'interfaccia web.  
+Questo progetto consiste nell’esposizione di un servizio **RAG (Retrieval-Augmented Generation)** di tipo biomedicale all’interno di un cluster Kubernetes, rendendolo accessibile tramite un'interfaccia web.  
 
 Il sistema è composto da due componenti principali:
 
-1.  Backend RAG: un servizio Flask che carica e indicizza un ampio corpus di documenti biomedicali tramite embedding generati con PubMedBERT. Gli embedding sono indicizzati con FAISS per una ricerca efficiente. Il backend espone un endpoint API /query che riceve domande e restituisce risposte basate sui documenti più rilevanti.
+1.  **Backend RAG**: un servizio Flask che carica e indicizza un dataset di documenti biomedicali tramite embedding generati con PubMedBERT. Gli embedding sono indicizzati con FAISS per una ricerca efficiente. Il backend espone un endpoint API /query che riceve domande e restituisce risposte basate sui documenti più rilevanti.
 
-2.  Frontend Web: un’interfaccia Flask con pagina HTML che permette agli utenti di inserire domande e visualizzare le risposte ottenute dal backend. Il frontend invia richieste al backend tramite chiamate HTTP.
+2.  **Frontend Web**: un’interfaccia Flask con pagina HTML che permette agli utenti di inserire domande e visualizzare le risposte ottenute dal backend. Il frontend invia richieste al backend tramite chiamate HTTP.
 
 
 
@@ -19,11 +19,10 @@ L’obiettivo non è tanto analizzare il modello RAG, quanto mostrare come conta
 
 ## Architettura del cluster
 
-Il cluster kubernetes è costituito da due macchine virtuali su cui è installato Xubuntu 24. 
-
+Il cluster Kubernetes è costituito da due macchine virtuali su cui è installato Xubuntu 24. 
 Le due macchine virtuali sono connesse ad una rete con NAT gestita da VirtualBox. 
 
-Per quanto riguarda i nodi kubernetes, una VM ospita il nodo master e l’altra il nodo worker:
+Per quanto riguarda i nodi Kubernetes, una VM ospita il nodo master e l’altra il nodo worker:
 * **master** (`192.168.43.10`)
 * **worker** (`192.168.43.11`)
 
@@ -58,27 +57,25 @@ Per quanto riguarda i nodi kubernetes, una VM ospita il nodo master e l’altra 
 │   ├── Dockerfile
 │   └── templates/        
 │       └── index.html
-│ 
+
 ```
 
+---
 
 ## Implementazione RAG
 
 ### Dataset
 
-Il dataset `documents.txt`contiene circa 160 frasi cliniche e scientifiche di alta qualità sull’apparato cardiovascolare.
+Il dataset `documents.txt`contiene circa 160 frasi cliniche e scientifiche di alta qualità relative all'**apparato cardiovascolare**.
 
 ### Costruzione indice
 
-Il file `build_index.py` carica PubMedBERT, un modello BERT pre-addestrato su articoli biomedici, legge il dataset e genera embedding. 
+Il file `build_index.py` carica **PubMedBERT**, un modello BERT pre-addestrato su articoli biomedici, legge il dataset e genera embedding. 
 Costruisce quindi un indice FAISS e lo salva su `biomed_index.faiss`.
 Salva anche tutti i documenti in `docs_store.txt` per mantenerli allineati con l’indice FAISS.
 L’indice FAISS e i documenti originali sono salvati su disco per un rapido caricamento.
 
-A questo punto è necessario installare le dipendenze per poi procedere alla generazione dell'indice:
-`pip install torch transformers faiss-cpu flask requests numpy`
-
-Generiamo l’indice FAISS attraverso il comando:
+Comando per generare l’indice FAISS:
 
 ```bash
 python build_index.py
@@ -87,17 +84,17 @@ python build_index.py
 ### Backend RAG
 Il backend Flask `app.py` espone un endpoint /query che riceve query testuali, calcola embedding, effettua ricerca nell’indice FAISS e restituisce il documento più rilevante come risposta.
 
-Avviare il backend RAG:
+Comando per avviare il backend RAG:
 ```bash
 python app.py
 ```
 
 ### Dockerizzazione
-Il RAG è contenuto in un'immagine Docker costruita localmente e caricata su DockerHub.
+Creazione e pubblicazione **immagine Docker** del RAG.
 
 `rag-biomed/Dockerfile`:
 
-```Dockerfile
+```dockerfile
 FROM python:3.10-slim
 
 WORKDIR /app
@@ -116,67 +113,73 @@ CMD ["python", "app.py"]
 Eseguire i comandi:
 ```bash
 docker build -t giuliagiglioni/rag-biomed:latest .
-
+```
+```bash
 docker push giuliagiglioni/rag-biomed:latest
 ```
 
 
 ### Kubernetes
-Creazione Deployment e Service per il RAG appena creato.
+Creazione **Deployment** e **Service** per il RAG.
 
-```yaml
-# deployment.yaml
-	
+`rag-k8s/deployment.yaml`:
+
+```yaml	
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-    name: rag-deployment
+  name: rag-deployment
 spec:
-    replicas: 1
-    selector:
+  replicas: 1
+  selector:
     matchLabels:
-        app: rag
-    template:
+      app: rag
+  template:
     metadata:
-        labels:
+      labels:
         app: rag
     spec:
-        containers:
-        - name: rag-container
+      containers:
+      - name: rag-container
         image: giuliagiglioni/rag-biomed:latest
         ports:
         - containerPort: 5000
+```
 
-# service.yaml
+`rag-k8s/service.yaml`:
 
+```yaml
 apiVersion: v1
-	kind: Service
-	metadata:
-	  name: rag-service
-	spec:
-	  selector:
-		app: rag
-	  type: NodePort
-	  ports:
-		- protocol: TCP
-		  port: 80
-		  targetPort: 5000
-
+kind: Service
+metadata:
+  name: rag-service
+spec:
+  selector:
+    app: rag
+  type: NodePort
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 5000
 ```
 
 Eseguire i comandi:
-
-`kubectl apply -f deployment.yaml`
-
-`kubectl apply -f service.yaml`
-
+```bash
+kubectl apply -f deployment.yaml
+```
+```bash
+kubectl apply -f service.yaml
+```
 
 Per testare:
 ```bash
 kubectl get pods
-
+```
+```bash
 kubectl get svc
 ```
+
+---
 
 ## Implementazione interfaccia RAG 
 
@@ -184,18 +187,18 @@ L’interfaccia utente è stata implementata in Flask con un template HTML basat
 
 ### Frontend Web
 
-Il file app.py crea una web app con Flask per interrogare il sistema di RAG (Retrieval-Augmented Generation).
-Invia richieste HTTP POST al backend (servizio RAG), recupera le risposte e le mostra nella pagina `index.html`.
+Il file `app.py` crea una web app con Flask per interrogare il RAG.
+Invia richieste HTTP POST al backend (rag-service), recupera le risposte e le mostra nella pagina `index.html`.
 
 
 File `app.py`:
-```yaml
+```python
 from flask import Flask, request, render_template
 import requests
 
 app = Flask(__name__)
 
-RAG_ENDPOINT = "http://rag-service:80/query"  # Nome del service Kubernetes del RAG
+RAG_ENDPOINT = "http://rag-service:80/query"
 
 @app.route("/", methods=["GET", "POST"])
 def index():
@@ -214,11 +217,11 @@ def index():
     return render_template("index.html", answer=answer, query=query)
 ```
 
-Il file index.html è un template HTML per l'interfaccia utente di una web app Flask.
-Serve a creare una pagina web interattiva per porre domande biomedicali a un sistema RAG (Retrieval-Augmented Generation).
+Il file `index.html` è un template HTML per l'**interfaccia utente** di una web app Flask.
+Serve a creare una pagina web interattiva per porre domande in ambito biomedicale a un RAG.
 
 File `index.html`:
-```yaml
+```html 
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -254,9 +257,8 @@ File `index.html`:
 ```
 
 
----
-
 ### Dockerizzazione
+Creazione e pubblicazione **immagine Docker** dell'interfaccia.
 
 `rag-ui-k8s/Dockerfile`:
 
@@ -282,17 +284,17 @@ CMD ["flask", "run"]
 Eseguire i comandi:
 ```bash
 docker build -t giuliagiglioni/rag-flask-ui:latest .
-
+```
+```bash
 docker push giuliagiglioni/rag-flask-ui:latest
 ```
 
-
 ### Kubernetes
-Creazione Deployment e Service per l'interfaccia appena creata.
+Creazione **Deployment** e **Service** per l'interfaccia.
 
-```yaml
-# rag-flask-ui-deployment.yaml  
-	
+`rag-ui-k8s/rag-flask-ui-deployment.yaml`:
+
+```yaml	
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -312,9 +314,11 @@ spec:
     image: giuliagiglioni/rag-flask-ui:latest
     ports:
     - containerPort: 5000
+```
 
-# rag-flask-ui-service.yaml
+`rag-ui-k8s/rag-flask-ui-service.yaml`:
 
+```yaml
 apiVersion: v1
 kind: Service
 metadata:
@@ -327,7 +331,6 @@ spec:
   - port: 5000
     targetPort: 5000
     nodePort: 31000  
-
 ```
 
 Il servizio Kubernetes è di tipo NodePort, per consentire l’accesso esterno.
@@ -336,7 +339,8 @@ Eseguire i comandi:
 
 ```bash
 kubectl apply -f rag-flask-ui-deployment.yaml
-
+```
+```bash
 kubectl apply -f rag-flask-ui-service.yaml
 ```
 
@@ -345,26 +349,24 @@ Per testare:
 
 ```bash
 kubectl get pods
-
+```
+```bash
 kubectl get svc
 ```
 
 ---
 
 
-
 ## Accesso al Servizio (Accesso al RAG)
+Il servizio `rag-flask-ui` espone l'interfaccia web sulla porta 31000 del nodo.
+L’utente interagisce con il servizio tramite il browser visitando la pagina `http://ip-nodo:31000`.
 
-`rag-flask-ui` espone l'interfaccia web sulla porta 31000 del nodo.
+L’indirizzo per **accedere all’interfaccia web del RAG** è quindi: 
+```bash
+http://192.168.43.11:31000
+```
 
-L’interfaccia web comunica con il servizio RAG tramite il nome del servizio Kubernets (`rag-service`) sulla porta 80, visibile solo internamente cluster.
-
-L’utente interagisce con il sistema tramite browser visitando `http://ip-nodo:31000`.
-
-L’indirizzo per accedere all’interfaccia web del RAG diventa quindi: `http://192.168.43.11:31000`
-
-L'utente quindi apre il browser all'indirizzo specificati, inserisce una domanda e ottiene la risposta.
-
+L'utente apre il browser all'indirizzo specificato, inserisce una domanda e ottiene la risposta.
 
 ---
 
@@ -386,23 +388,22 @@ Il servizio ha risposto restituendo il documento biomedicale più simile semanti
 
 ## Possibili estensioni
 
-Migliorare il modello RAG con fine-tuning su dataset più ampi.
+- **Miglioramento del modello RAG**  
+  Effettuare un *fine-tuning* del modello PubMedBERT su dataset più ampi o specifici per ottenere risposte più precise e contestualizzate.
 
-Estendere l’interfaccia web con cronologia delle domande.
+- **Estensione dell'interfaccia web**  
+  Aggiungere funzionalità come la **cronologia delle domande**.
 
-Implementare caching delle risposte frequenti.
-
+- **Caching delle risposte frequenti**  
+  Implementare un meccanismo di caching  per rispondere più rapidamente a domande già poste, riducendo il carico sul backend.
 
 ---
 
 ## Conclusioni
 
-Questo progetto mostra come strutturare e rendere accessibile un microservizio RAG all’interno di Kubernetes.
+Questo progetto mostra come strutturare e rendere accessibile tramite una semplice interfaccia web un microservizio RAG all’interno di Kubernetes.
 Il frontend e il backend sono completamente separati e comunicano tramite Service interni, seguendo le best practice di orchestrazione.
-Il sistema è scalabile, portabile e facilmente estendibile, e rappresenta un valido prototipo per ambienti di produzione.
-
-Il progetto ha dimostrato la fattibilità di costruire un sistema RAG biomedicale efficiente e accessibile tramite una semplice interfaccia web. 
-L’uso di modelli preaddestrati specializzati come PubMedBERT e l’indicizzazione FAISS ha permesso di realizzare una soluzione performante in ambiente locale, facilmente estendibile e migliorabile in futuro.
+Il sistema è scalabile, portabile e facilmente estendibile.
 
 ---
 ## Autore
