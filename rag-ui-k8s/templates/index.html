@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Biomedical RAG</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<div class="container py-5">
+  <h1 class="mb-4">🔬 Biomedical RAG Interface</h1>
+
+  <form method="POST" class="mb-4">
+    <div class="mb-3">
+      <label for="query" class="form-label">Enter your biomedical question:</label>
+      <input type="text" class="form-control" id="query" name="query" value="{{ query or '' }}" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Ask</button>
+  </form>
+
+  {% if answer %}
+  <div class="card">
+    <div class="card-header">📘 Answer</div>
+    <div class="card-body">
+      <p class="card-text">{{ answer }}</p>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+</body>
+</html>
