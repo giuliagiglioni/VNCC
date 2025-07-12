@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rag-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rag
+  template:
+    metadata:
+      labels:
+        app: rag
+    spec:
+      containers:
+      - name: rag-container
+        image: giuliagiglioni/rag-biomed:latest
+        ports:
+        - containerPort: 5000
