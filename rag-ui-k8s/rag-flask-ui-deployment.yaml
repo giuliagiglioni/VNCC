@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rag-flask-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rag-flask-ui
+  template:
+    metadata:
+      labels:
+        app: rag-flask-ui
+    spec:
+      containers:
+      - name: rag-flask-ui
+        image: giuliagiglioni/rag-flask-ui:latest
+        ports:
+        - containerPort: 5000
