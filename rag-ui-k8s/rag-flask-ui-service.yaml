@@ -3,10 +3,9 @@ kind: Service
 metadata:
   name: rag-flask-ui
 spec:
-  type: NodePort
+  type: LoadBalancer
   selector:
     app: rag-flask-ui
   ports:
     - port: 5000
       targetPort: 5000
-      nodePort: 31000
