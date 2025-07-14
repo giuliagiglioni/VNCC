@@ -324,16 +324,15 @@ kind: Service
 metadata:
   name: rag-flask-ui
 spec:
-  type: NodePort
+  type: LoadBalancer
   selector:
-  app: rag-flask-ui
+    app: rag-flask-ui
   ports:
-  - port: 5000
-    targetPort: 5000
-    nodePort: 31000  
+    - port: 5000
+      targetPort: 5000
 ```
 
-Il servizio Kubernetes è di tipo NodePort, per consentire l’accesso esterno.
+Il servizio Kubernetes è di tipo LoadBalancer, per consentire l’accesso esterno.
 
 Eseguire i comandi:
 
@@ -358,12 +357,19 @@ kubectl get svc
 
 
 ## Accesso al Servizio (Accesso al RAG)
-Il servizio `rag-flask-ui` espone l'interfaccia web sulla porta 31000 del nodo.
-L’utente interagisce con il servizio tramite il browser visitando la pagina `http://ip-nodo:31000`.
+Per rendere l’interfaccia accessibile anche da fuori il cluster (senza conoscere IP/porta dei nodi), è possibile usare MetalLB come LoadBalancer.
+
+Eseguendo il comando
+```bash
+kubectl get svc
+```
+otteniamo l'indirizzo IP esterno e la relativa porta.
+
+Nel nostro caso l'IP esterno è `192.168.43.241` e la porta è la `5000`.
 
 L’indirizzo per **accedere all’interfaccia web del RAG** è quindi: 
 ```bash
-http://192.168.43.11:31000
+http://192.168.43.241:5000
 ```
 
 L'utente apre il browser all'indirizzo specificato, inserisce una domanda e ottiene la risposta.
