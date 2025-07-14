@@ -365,11 +365,11 @@ kubectl get svc
 ```
 otteniamo l'indirizzo IP esterno e la relativa porta.
 
-Nel nostro caso l'IP esterno è `192.168.43.241` e la porta è la `5000`.
+Nel nostro caso l'IP esterno è `192.168.1.242` e la porta è la `5000`.
 
 L’indirizzo per **accedere all’interfaccia web del RAG** è quindi: 
 ```bash
-http://192.168.43.241:5000
+http://192.168.1.242:5000
 ```
 
 L'utente apre il browser all'indirizzo specificato, inserisce una domanda e ottiene la risposta.
